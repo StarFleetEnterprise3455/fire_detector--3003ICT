@@ -16,7 +16,7 @@ const int SAFE_SMOKE = 200;
 
 // CURRENT STATE
 
-FireState currentState = NORMAL;
+static FireState currentState = NORMAL;
 
 // SET STATE
 

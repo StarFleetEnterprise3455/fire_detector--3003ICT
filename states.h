@@ -1,5 +1,4 @@
-#ifndef STATES_H
-#define STATES_H
+#pragma once
 
 enum FireState {
   NORMAL,
@@ -7,5 +6,3 @@ enum FireState {
   CRITICAL,
   EMERGENCY
 };
-
-#endif
