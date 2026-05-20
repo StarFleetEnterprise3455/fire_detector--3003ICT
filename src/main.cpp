@@ -1,17 +1,22 @@
 #include <Arduino.h>
 
+#include "fsm_logic.h"
+
 void setup() {
     Serial.begin(115200);
 }
 
 void loop() {
 
-    // fake sensor data
-    float temp = 70;
-    int smoke = 2500;
+    // TEMPORARY fake sensor values
+    float temperature = 60.0;
+    int smoke = 350;
 
-    Serial.println(temp);
-    Serial.println(smoke);
+    // Update FSM
+    updateState(temperature, smoke);
+
+    // Get current state
+    FireState current = getState();
 
     delay(1000);
 }

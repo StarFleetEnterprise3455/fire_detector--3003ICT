@@ -10,6 +10,7 @@
             "includePath": [
                 "C:/Users/Abraham/fire_detector--3003ICT/include",
                 "C:/Users/Abraham/fire_detector--3003ICT/src",
+                "C:/Users/Abraham/fire_detector--3003ICT/lib/fsm",
                 "C:/Users/Abraham/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/newlib/platform_include",
                 "C:/Users/Abraham/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/freertos/include",
                 "C:/Users/Abraham/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/freertos/include/esp_additions/freertos",
@@ -246,6 +247,7 @@
                 "path": [
                     "C:/Users/Abraham/fire_detector--3003ICT/include",
                     "C:/Users/Abraham/fire_detector--3003ICT/src",
+                    "C:/Users/Abraham/fire_detector--3003ICT/lib/fsm",
                     "C:/Users/Abraham/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/newlib/platform_include",
                     "C:/Users/Abraham/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/freertos/include",
                     "C:/Users/Abraham/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/freertos/include/esp_additions/freertos",
