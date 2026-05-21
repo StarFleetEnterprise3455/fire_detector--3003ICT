@@ -1,72 +1,58 @@
-#include <DHT.h>
+#include <Arduino.h>
 
-#define DHTPIN 15
-#define DHTTYPE DHT22
+#include "config.h"
+#include "sensors.h"
+#include "fsm.h"
+#include "outputs.h"
+#include "wifi.h"
 
-#define MQ2_PIN 34
-#define LED_PIN 2
-#define BUZZER_PIN 4
-
-const float SAFE_TEMP = 50.0;
-const int SMOKE_THRESHOLD = 1800;
-
-DHT dht(DHTPIN, DHTTYPE);
-
+float tempFiltered = 25;
 
 void setup() {
-  // put your setup code here, to run once:
+
   Serial.begin(115200);
-  dht.begin();
 
-  pinMode(LED_PIN, OUTPUT);
-  pinMode(BUZZER_PIN, OUTPUT);
+  initWiFi();
 
-  Serial.println("Fire Detection System Started");
+  initSensors();
+
+  initOutputs();
+
+  Serial.println("FIRE DETECTION SYSTEM");
 }
 
 void loop() {
 
-  float temperature = dht.readTemperature();
+  handleSimulationInput();
 
-  int smokeLevel = analogRead(MQ2_PIN);
+  float temp = getTemperature();
+  int smoke = getSmokeLevel();
 
-  bool fireDetected = false;
+  if (temp != INVALID_TEMP) {
 
-  Serial.println("Temperature: ");
-  Serial.println(temperature);
-  Serial.println("C");
+    tempFiltered =
+      (ALPHA * temp) +
+      ((1 - ALPHA) * tempFiltered);
 
-  Serial.print("Smoke Level: ");
-  Serial.println(smokeLevel);
+    updateState(tempFiltered, smoke);
 
-  if (temperature > SAFE_TEMP) {
-    fireDetected = true;
-  }
-
-  if (smokeLevel > SMOKE_THRESHOLD) {
-    fireDetected = true;
-  }
-
-  if (fireDetected) {
-    digitalWrite(LED_PIN, HIGH);
-
-    tone(BUZZER_PIN, 1000);
-
-    Serial.println("!!! FIRE ALARM ACTIVATED !!!");
   } else {
-    digitalWrite(LED_PIN, LOW);
 
-    noTone(BUZZER_PIN);
+    updateState(INVALID_TEMP, smoke);
+  }
 
-    Serial.println("System Safe");
+  FireState state = getState();
 
-    
+  applyOutputs(state);
 
-    
-  } 
+  Serial.print("Temp: ");
+  Serial.print(tempFiltered);
 
-  Serial.println("---------------");
+  Serial.print(" | Smoke: ");
+  Serial.print(smoke);
+
+  Serial.print(" | State: ");
+  Serial.println(state);
 
   delay(1000);
-                          
 }
