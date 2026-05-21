@@ -8,7 +8,7 @@
 #define BUZZER_PIN 4
 
 const float SAFE_TEMP = 50.0;
-const int SMOKE_THRESHOLD = 1800;
+const int SMOKE_THRESHOLD = 2000;
 
 DHT dht(DHTPIN, DHTTYPE);
 
