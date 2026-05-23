@@ -1,132 +1,113 @@
 #include <Arduino.h>
 
 #include "fsm.h"
+#include "config.h"
+#include "wifi.h"
 
-// THRESHOLDS
+// ================= CURRENT STATE =================
+FireState state = NORMAL;
 
-const float TEMP_THRESHOLD = 50.0;
-const int SMOKE_THRESHOLD = 300;
+// ================= CRITICAL TIMER =================
+unsigned long criticalStartTime = 0;
 
-const float EXTREME_TEMP = 70.0;
-const int EXTREME_SMOKE = 500;
+const unsigned long CRITICAL_TIMEOUT = 10000;
 
-const float SAFE_TEMP = 40.0;
-const int SAFE_SMOKE = 200;
+// ================= GET CURRENT STATE =================
+FireState getState() {
 
+  return state;
+}
 
-// CURRENT STATE
-
-static FireState currentState = NORMAL;
-
-// SET STATE
-
+// ================= SET STATE =================
 void setState(FireState newState) {
 
-  if (newState != currentState) {
+  if (state != newState) {
 
-    currentState = newState;
+    // Start timer when entering CRITICAL
+    if (newState == CRITICAL &&
+        state != CRITICAL) {
+
+      criticalStartTime = millis();
+    }
+
+    // Reset timer when leaving CRITICAL
+    if (newState != CRITICAL) {
+
+      criticalStartTime = 0;
+    }
+
+    state = newState;
 
     Serial.print("STATE CHANGED TO: ");
+    Serial.println((state));
 
-    switch(currentState) {
-
-      case NORMAL:
-        Serial.println("NORMAL");
-        break;
-
-      case WARNING:
-        Serial.println("WARNING");
-        break;
-
-      case CRITICAL:
-        Serial.println("CRITICAL");
-        break;
-
-      case EMERGENCY:
-        Serial.println("EMERGENCY");
-        break;
-    }
+    // Send WiFi alert once per state change
+    sendFireAlert(state);
   }
 }
 
-// GET CURRENT STATE
+// ================= FSM UPDATE =================
+void updateState(float temp, int smoke) {
 
-FireState getState() {
-  return currentState;
-}
+  bool tempFailed = (temp == INVALID_TEMP);
+  bool smokeFailed = (smoke == INVALID_SMOKE);
 
-// FSM TRANSITION LOGIC
+  // ================= FAIL SAFE =================
+  if (tempFailed && smokeFailed) {
 
-void updateState(float temperature, int smoke) {
+    setState(FAIL_SAFE);
+    return;
+  }
 
-  switch(currentState) {
-    // NORMAL STATE
+  // ================= EMERGENCY LATCH =================
+  if (state == EMERGENCY) {
 
-    case NORMAL:
-      // Move to WARNING
+    // Stay in EMERGENCY until conditions are safe
+    if (temp < SAFE_TEMP &&
+        smoke < SAFE_SMOKE) {
 
-      if (temperature > TEMP_THRESHOLD ||
-          smoke > SMOKE_THRESHOLD) {
+      setState(NORMAL);
+    }
 
-        setState(WARNING);
-      }
+    return;
+  }
 
-      break;
+  // ================= EMERGENCY =================
+  else if (
 
-    // WARNING STATE
+      // Extreme fire conditions
+      (temp > EXTREME_TEMP &&
+       smoke > EXTREME_SMOKE)
 
-    case WARNING:
-      // Move to CRITICAL
+      ||
 
-      if (temperature > TEMP_THRESHOLD &&
-          smoke > SMOKE_THRESHOLD) {
+      // Critical state lasting too long
+      (state == CRITICAL &&
+       temp > TEMP_THRESHOLD &&
+       smoke > SMOKE_THRESHOLD &&
+       millis() - criticalStartTime > CRITICAL_TIMEOUT)
+  ) {
 
-        setState(CRITICAL);
-      }
+    setState(EMERGENCY);
+  }
 
-      // Return to NORMAL
+  // ================= CRITICAL =================
+  else if (temp > TEMP_THRESHOLD &&
+           smoke > SMOKE_THRESHOLD) {
 
-      else if (temperature < SAFE_TEMP &&
-               smoke < SAFE_SMOKE) {
+    setState(CRITICAL);
+  }
 
-        setState(NORMAL);
-      }
+  // ================= WARNING =================
+  else if (temp > TEMP_THRESHOLD ||
+           smoke > SMOKE_THRESHOLD) {
 
-      break;
+    setState(WARNING);
+  }
 
-    // CRITICAL STATE
+  // ================= NORMAL =================
+  else {
 
-    case CRITICAL:
-      // Move to EMERGENCY
-
-      if (temperature > EXTREME_TEMP ||
-          smoke > EXTREME_SMOKE) {
-
-        setState(EMERGENCY);
-      }
-
-      // Return to WARNING
-
-      else if (temperature < TEMP_THRESHOLD &&
-               smoke < SMOKE_THRESHOLD) {
-
-        setState(WARNING);
-      }
-
-      break;
-
-
-    // EMERGENCY STATE
-    case EMERGENCY:
-
-      // Optional recovery logic
-
-      if (temperature < SAFE_TEMP &&
-          smoke < SAFE_SMOKE) {
-
-        setState(NORMAL);
-      }
-
-      break;
+    setState(NORMAL);
   }
 }
